@@ -1,0 +1,179 @@
+{
+  "$schema": "https://vega.github.io/schema/vega-lite/v5.json",
+  "width": 960,
+  "height": 680,
+  "background": "#f5f7fb",
+  "config": {
+    "view": {"stroke": null},
+    "axis": {"labelFontSize": 12, "titleFontSize": 13}
+  },
+  "projection": {
+    "type": "conicEqualArea",
+    "parallels": [-18, -36],
+    "rotate": [-132, 0, 0],
+    "fit": {"data": "aus"}
+  },
+  "params": [
+    {
+      "name": "topN",
+      "value": 15,
+      "bind": {
+        "input": "range",
+        "min": 5,
+        "max": 40,
+        "step": 1,
+        "name": "Top N airports"
+      }
+    },
+    {"name": "zoom", "select": {"type": "interval", "encodings": ["x", "y"]}},
+    {
+      "name": "hover",
+      "select": {"type": "point", "on": "pointerover", "clear": "pointerout"}
+    }
+  ],
+  "layer": [
+    {
+      "data": {"graticule": {"step": [30, 30]}},
+      "mark": {
+        "type": "geoshape",
+        "stroke": "#d6dee6",
+        "strokeWidth": 0.8,
+        "fill": null
+      }
+    },
+    {
+      "name": "aus",
+      "data": {
+        "url": "https://vega.github.io/vega-datasets/data/world-110m.json",
+        "format": {"type": "topojson", "feature": "countries"}
+      },
+      "transform": [{"filter": "datum.id == 36"}],
+      "mark": {
+        "type": "geoshape",
+        "fill": "#eef3f7",
+        "stroke": "#a9b6c2",
+        "strokeWidth": 0.8
+      }
+    },
+    {
+      "data": {"url": "yed_pax_2019.csv"},
+      "transform": [
+        {"filter": "datum.AIRPORT != 'TOTAL AUSTRALIA'"},
+        {"calculate": "toNumber(datum.Pax_Total)", "as": "PAX"},
+        {
+          "calculate": "toNumber(datum.Int_Pax_Total) / max(1, toNumber(datum.Pax_Total))",
+          "as": "intl_share"
+        },
+        {
+          "window": [{"op": "rank", "as": "r"}],
+          "sort": [{"field": "PAX", "order": "descending"}]
+        },
+        {"filter": "datum.r <= topN"},
+        {
+          "lookup": "AIRPORT",
+          "from": {
+            "data": {
+              "values": [
+                {"AIRPORT": "SYDNEY", "lon": 151.17722, "lat": -33.94611},
+                {"AIRPORT": "MELBOURNE", "lon": 144.84333, "lat": -37.67333},
+                {"AIRPORT": "BRISBANE", "lon": 153.11639, "lat": -27.38528},
+                {"AIRPORT": "PERTH", "lon": 115.964, "lat": -31.936},
+                {"AIRPORT": "ADELAIDE", "lon": 138.525, "lat": -34.9403},
+                {"AIRPORT": "GOLD COAST", "lon": 153.5068, "lat": -28.16665},
+                {"AIRPORT": "CAIRNS", "lon": 145.75414, "lat": -16.87673},
+                {"AIRPORT": "CANBERRA", "lon": 149.19194, "lat": -35.30667},
+                {"AIRPORT": "HOBART", "lon": 147.50501, "lat": -42.83728},
+                {"AIRPORT": "DARWIN", "lon": 130.87667, "lat": -12.41472},
+                {"AIRPORT": "TOWNSVILLE", "lon": 146.7592, "lat": -19.2515},
+                {"AIRPORT": "LAUNCESTON", "lon": 147.209, "lat": -41.5403},
+                {
+                  "AIRPORT": "SUNSHINE COAST",
+                  "lon": 153.09111,
+                  "lat": -26.60333
+                },
+                {"AIRPORT": "NEWCASTLE", "lon": 151.834, "lat": -32.795},
+                {"AIRPORT": "MACKAY", "lon": 149.18278, "lat": -21.17083}
+              ]
+            },
+            "key": "AIRPORT",
+            "fields": ["lon", "lat"]
+          }
+        },
+        {"filter": "isValid(datum.lon) && isValid(datum.lat)"}
+      ],
+      "layer": [
+        {
+          "mark": {
+            "type": "circle",
+            "opacity": 0.9,
+            "stroke": {
+              "expr": "hover.AIRPORT === datum.AIRPORT ? '#1b263b' : '#ffffff'"
+            },
+            "strokeWidth": {
+              "expr": "hover.AIRPORT === datum.AIRPORT ? 1.5 : 0.7"
+            }
+          },
+          "encoding": {
+            "longitude": {"field": "lon", "type": "quantitative"},
+            "latitude": {"field": "lat", "type": "quantitative"},
+            "size": {
+              "field": "PAX",
+              "type": "quantitative",
+              "title": "Passengers (2019)",
+              "scale": {"type": "sqrt", "range": [20, 2500]}
+            },
+            "color": {
+              "field": "intl_share",
+              "type": "quantitative",
+              "title": "International share",
+              "scale": {"scheme": "tealblue", "domain": [0, 0.6]}
+            },
+            "tooltip": [
+              {"field": "AIRPORT", "type": "nominal", "title": "Airport"},
+              {
+                "field": "PAX",
+                "type": "quantitative",
+                "title": "Total",
+                "format": ","
+              },
+              {
+                "field": "Dom_Pax_Total",
+                "type": "quantitative",
+                "title": "Domestic",
+                "format": ","
+              },
+              {
+                "field": "Int_Pax_Total",
+                "type": "quantitative",
+                "title": "International",
+                "format": ","
+              },
+              {
+                "field": "intl_share",
+                "type": "quantitative",
+                "title": "Int'l share",
+                "format": ".0%"
+              }
+            ],
+            "opacity": {"condition": {"param": "zoom", "value": 1}, "value": 1}
+          }
+        },
+        {
+          "transform": [{"filter": {"param": "hover"}}],
+          "mark": {
+            "type": "text",
+            "dy": -10,
+            "fontWeight": "bold",
+            "fontSize": 12,
+            "fill": "#1b263b"
+          },
+          "encoding": {
+            "longitude": {"field": "lon"},
+            "latitude": {"field": "lat"},
+            "text": {"field": "AIRPORT"}
+          }
+        }
+      ]
+    }
+  ]
+}
