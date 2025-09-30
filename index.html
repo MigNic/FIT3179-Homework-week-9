@@ -5,8 +5,9 @@
   <title>Australia airline passengers by airport (Year ended Dec 2019)</title>
   <meta name="viewport" content="width=device-width, initial-scale=1" />
 
-  <!-- Load the libraries via ... -->
-  <script src="https://cdn.jsdelivr.net/npm/vega https://cdn.jsdelivr.net/npm/vega-lite@5</script>
+  <!-- Load Vega libraries (each in its own script tag) -->
+  https://cdn.jsdelivr.net/npm/vega@5</script>
+  https://cdn.jsdelivr.net/npm/vega-lite@5</script>
   https://cdn.jsdelivr.net/npm/vega-embed@6</script>
 
   <style>
@@ -16,20 +17,24 @@
 </head>
 <body>
   <h1>Australia airline passengers by airport (Year ended Dec 2019)</h1>
-  <p>Bubble size = total passengers; color = international share. Drag to zoom; hover for details.</p>
+  <p>Bubble size = total passengers; color = international share. Drag to hover for details.</p>
 
   <!-- This is where the map will render -->
   <div id="vis"></div>
 
   <footer>
-    Sources: <code>yed_pax_2019.csv</code> (user‑provided); Base map: Natural Earth via vega‑datasets;
+    Sources: <code>yed_pax_2019.csv</code> (user‑provided); base map: Natural Earth via vega‑datasets;
     airport coordinates from Travelmath / LatLong.net / Wikipedia / Metar‑Taf / Latitude.to.
   </footer>
 
-  <!-- Embed the spec file that sits next to index.html -->
+  <!-- Embed the spec file -->
   <script>
     vegaEmbed('#vis', 'map.json', {renderer: 'canvas', actions: false})
-      .catch(err => { console.error(err); document.body.insertAdjacentText('beforeend', '\n\nEmbed error: ' + err); });
+      .then(({view}) => view)
+      .catch(err => {
+        console.error(err);
+        document.body.insertAdjacentText('beforeend', '\n\nEmbed error: ' + err);
+      });
   </script>
 </body>
 </html>
