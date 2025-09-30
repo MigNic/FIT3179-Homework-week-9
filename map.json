@@ -3,30 +3,36 @@
   "width": 960,
   "height": 680,
   "background": "#f5f7fb",
+
   "config": {
     "view": {"stroke": null},
     "axis": {"labelFontSize": 12, "titleFontSize": 13}
   },
+
   "projection": {
     "type": "conicEqualArea",
     "parallels": [-18, -36],
     "rotate": [-132, 0, 0],
     "fit": { "expr": "data('aus')" }
   },
+
+  /* Only the slider stays at top level */
   "params": [
     {
       "name": "topN",
       "value": 15,
       "bind": {"input": "range", "min": 5, "max": 40, "step": 1, "name": "Top N airports"}
-    },
-    {"name": "zoom", "select": {"type": "interval", "encodings": ["x", "y"]}},
-    {"name": "hover", "select": {"type": "point", "on": "pointerover", "clear": "pointerout"}}
+    }
   ],
+
   "layer": [
+    /* Graticule */
     {
       "data": {"graticule": {"step": [30, 30]}},
       "mark": {"type": "geoshape", "stroke": "#d6dee6", "strokeWidth": 0.8, "fill": null}
     },
+
+    /* Australia land (NAME THE DATASET to use it in projection.fit) */
     {
       "data": {
         "name": "aus",
@@ -36,13 +42,24 @@
       "transform": [{"filter": "datum.id == 36"}],
       "mark": {"type": "geoshape", "fill": "#eef3f7", "stroke": "#a9b6c2", "strokeWidth": 0.8}
     },
+
+    /* Airports group: DEFINE selections HERE so child layers can use them */
     {
+      "name": "airports",
+      "params": [
+        { "name": "zoom",  "select": {"type": "interval", "encodings": ["x","y"]} },
+        { "name": "hover", "select": {"type": "point", "on": "pointerover", "clear": "pointerout"} }
+      ],
+
       "data": {"url": "yed_pax_2019.csv"},
       "transform": [
         {"filter": "datum.AIRPORT != 'TOTAL AUSTRALIA'"},
         {"calculate": "toNumber(datum.Pax_Total)", "as": "PAX"},
         {"calculate": "toNumber(datum.Int_Pax_Total) / max(1, toNumber(datum.Pax_Total))", "as": "intl_share"},
-        {"window": [{"op": "rank", "as": "r"}], "sort": [{"field": "PAX", "order": "descending"}]},
+        {
+          "window": [{"op": "rank", "as": "r"}],
+          "sort": [{"field": "PAX", "order": "descending"}]
+        },
         {"filter": "datum.r <= topN"},
         {
           "lookup": "AIRPORT",
@@ -72,19 +89,36 @@
         },
         {"filter": "isValid(datum.lon) && isValid(datum.lat)"}
       ],
+
       "layer": [
+        /* Circles */
         {
-          "mark": {
-            "type": "circle",
-            "opacity": 0.9,
-            "stroke": {"expr": "hover.AIRPORT === datum.AIRPORT ? '#1b263b' : '#ffffff'"},
-            "strokeWidth": {"expr": "hover.AIRPORT === datum.AIRPORT ? 1.5 : 0.7"}
-          },
+          "mark": {"type": "circle", "opacity": 0.9},
           "encoding": {
             "longitude": {"field": "lon", "type": "quantitative"},
             "latitude": {"field": "lat", "type": "quantitative"},
-            "size": {"field": "PAX", "type": "quantitative", "title": "Passengers (2019)", "scale": {"type": "sqrt", "range": [20, 2500]}},
-            "color": {"field": "intl_share", "type": "quantitative", "title": "International share", "scale": {"scheme": "tealblue", "domain": [0, 0.6]}},
+
+            "size": {
+              "field": "PAX", "type": "quantitative",
+              "title": "Passengers (2019)",
+              "scale": {"type": "sqrt", "range": [20, 2500]}
+            },
+
+            "color": {
+              "field": "intl_share", "type": "quantitative",
+              "title": "International share",
+              "scale": {"scheme": "tealblues", "domain": [0, 0.6]}
+            },
+
+            "stroke": {
+              "condition": {"param": "hover", "value": "#1b263b"},
+              "value": "#ffffff"
+            },
+            "strokeWidth": {
+              "condition": {"param": "hover", "value": 1.5},
+              "value": 0.7
+            },
+
             "tooltip": [
               {"field": "AIRPORT", "type": "nominal", "title": "Airport"},
               {"field": "PAX", "type": "quantitative", "title": "Total", "format": ","},
@@ -92,13 +126,24 @@
               {"field": "Int_Pax_Total", "type": "quantitative", "title": "International", "format": ","},
               {"field": "intl_share", "type": "quantitative", "title": "Int'l share", "format": ".0%"}
             ],
-            "opacity": {"condition": {"param": "zoom", "value": 1}, "value": 1}
+
+            /* Optional focus effect if you drag out a 'zoom' interval */
+            "opacity": {
+              "condition": {"param": "zoom", "value": 1},
+              "value": 1
+            }
           }
         },
+
+        /* Labels for hovered point only */
         {
           "transform": [{"filter": {"param": "hover"}}],
           "mark": {"type": "text", "dy": -10, "fontWeight": "bold", "fontSize": 12, "fill": "#1b263b"},
-          "encoding": {"longitude": {"field": "lon"}, "latitude": {"field": "lat"}, "text": {"field": "AIRPORT"}}
+          "encoding": {
+            "longitude": {"field": "lon"},
+            "latitude": {"field": "lat"},
+            "text": {"field": "AIRPORT"}
+          }
         }
       ]
     }
