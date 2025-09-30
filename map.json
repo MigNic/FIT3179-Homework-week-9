@@ -11,63 +11,38 @@
     "type": "conicEqualArea",
     "parallels": [-18, -36],
     "rotate": [-132, 0, 0],
-    "fit": {"data": "aus"}
+    "fit": { "expr": "data('aus')" }
   },
   "params": [
     {
       "name": "topN",
       "value": 15,
-      "bind": {
-        "input": "range",
-        "min": 5,
-        "max": 40,
-        "step": 1,
-        "name": "Top N airports"
-      }
+      "bind": {"input": "range", "min": 5, "max": 40, "step": 1, "name": "Top N airports"}
     },
     {"name": "zoom", "select": {"type": "interval", "encodings": ["x", "y"]}},
-    {
-      "name": "hover",
-      "select": {"type": "point", "on": "pointerover", "clear": "pointerout"}
-    }
+    {"name": "hover", "select": {"type": "point", "on": "pointerover", "clear": "pointerout"}}
   ],
   "layer": [
     {
       "data": {"graticule": {"step": [30, 30]}},
-      "mark": {
-        "type": "geoshape",
-        "stroke": "#d6dee6",
-        "strokeWidth": 0.8,
-        "fill": null
-      }
+      "mark": {"type": "geoshape", "stroke": "#d6dee6", "strokeWidth": 0.8, "fill": null}
     },
     {
-      "name": "aus",
       "data": {
+        "name": "aus",
         "url": "https://vega.github.io/vega-datasets/data/world-110m.json",
         "format": {"type": "topojson", "feature": "countries"}
       },
       "transform": [{"filter": "datum.id == 36"}],
-      "mark": {
-        "type": "geoshape",
-        "fill": "#eef3f7",
-        "stroke": "#a9b6c2",
-        "strokeWidth": 0.8
-      }
+      "mark": {"type": "geoshape", "fill": "#eef3f7", "stroke": "#a9b6c2", "strokeWidth": 0.8}
     },
     {
       "data": {"url": "yed_pax_2019.csv"},
       "transform": [
         {"filter": "datum.AIRPORT != 'TOTAL AUSTRALIA'"},
         {"calculate": "toNumber(datum.Pax_Total)", "as": "PAX"},
-        {
-          "calculate": "toNumber(datum.Int_Pax_Total) / max(1, toNumber(datum.Pax_Total))",
-          "as": "intl_share"
-        },
-        {
-          "window": [{"op": "rank", "as": "r"}],
-          "sort": [{"field": "PAX", "order": "descending"}]
-        },
+        {"calculate": "toNumber(datum.Int_Pax_Total) / max(1, toNumber(datum.Pax_Total))", "as": "intl_share"},
+        {"window": [{"op": "rank", "as": "r"}], "sort": [{"field": "PAX", "order": "descending"}]},
         {"filter": "datum.r <= topN"},
         {
           "lookup": "AIRPORT",
@@ -86,11 +61,7 @@
                 {"AIRPORT": "DARWIN", "lon": 130.87667, "lat": -12.41472},
                 {"AIRPORT": "TOWNSVILLE", "lon": 146.7592, "lat": -19.2515},
                 {"AIRPORT": "LAUNCESTON", "lon": 147.209, "lat": -41.5403},
-                {
-                  "AIRPORT": "SUNSHINE COAST",
-                  "lon": 153.09111,
-                  "lat": -26.60333
-                },
+                {"AIRPORT": "SUNSHINE COAST", "lon": 153.09111, "lat": -26.60333},
                 {"AIRPORT": "NEWCASTLE", "lon": 151.834, "lat": -32.795},
                 {"AIRPORT": "MACKAY", "lon": 149.18278, "lat": -21.17083}
               ]
@@ -106,72 +77,28 @@
           "mark": {
             "type": "circle",
             "opacity": 0.9,
-            "stroke": {
-              "expr": "hover.AIRPORT === datum.AIRPORT ? '#1b263b' : '#ffffff'"
-            },
-            "strokeWidth": {
-              "expr": "hover.AIRPORT === datum.AIRPORT ? 1.5 : 0.7"
-            }
+            "stroke": {"expr": "hover.AIRPORT === datum.AIRPORT ? '#1b263b' : '#ffffff'"},
+            "strokeWidth": {"expr": "hover.AIRPORT === datum.AIRPORT ? 1.5 : 0.7"}
           },
           "encoding": {
             "longitude": {"field": "lon", "type": "quantitative"},
             "latitude": {"field": "lat", "type": "quantitative"},
-            "size": {
-              "field": "PAX",
-              "type": "quantitative",
-              "title": "Passengers (2019)",
-              "scale": {"type": "sqrt", "range": [20, 2500]}
-            },
-            "color": {
-              "field": "intl_share",
-              "type": "quantitative",
-              "title": "International share",
-              "scale": {"scheme": "tealblue", "domain": [0, 0.6]}
-            },
+            "size": {"field": "PAX", "type": "quantitative", "title": "Passengers (2019)", "scale": {"type": "sqrt", "range": [20, 2500]}},
+            "color": {"field": "intl_share", "type": "quantitative", "title": "International share", "scale": {"scheme": "tealblue", "domain": [0, 0.6]}},
             "tooltip": [
               {"field": "AIRPORT", "type": "nominal", "title": "Airport"},
-              {
-                "field": "PAX",
-                "type": "quantitative",
-                "title": "Total",
-                "format": ","
-              },
-              {
-                "field": "Dom_Pax_Total",
-                "type": "quantitative",
-                "title": "Domestic",
-                "format": ","
-              },
-              {
-                "field": "Int_Pax_Total",
-                "type": "quantitative",
-                "title": "International",
-                "format": ","
-              },
-              {
-                "field": "intl_share",
-                "type": "quantitative",
-                "title": "Int'l share",
-                "format": ".0%"
-              }
+              {"field": "PAX", "type": "quantitative", "title": "Total", "format": ","},
+              {"field": "Dom_Pax_Total", "type": "quantitative", "title": "Domestic", "format": ","},
+              {"field": "Int_Pax_Total", "type": "quantitative", "title": "International", "format": ","},
+              {"field": "intl_share", "type": "quantitative", "title": "Int'l share", "format": ".0%"}
             ],
             "opacity": {"condition": {"param": "zoom", "value": 1}, "value": 1}
           }
         },
         {
           "transform": [{"filter": {"param": "hover"}}],
-          "mark": {
-            "type": "text",
-            "dy": -10,
-            "fontWeight": "bold",
-            "fontSize": 12,
-            "fill": "#1b263b"
-          },
-          "encoding": {
-            "longitude": {"field": "lon"},
-            "latitude": {"field": "lat"},
-            "text": {"field": "AIRPORT"}
-          }
+          "mark": {"type": "text", "dy": -10, "fontWeight": "bold", "fontSize": 12, "fill": "#1b263b"},
+          "encoding": {"longitude": {"field": "lon"}, "latitude": {"field": "lat"}, "text": {"field": "AIRPORT"}}
         }
       ]
     }
